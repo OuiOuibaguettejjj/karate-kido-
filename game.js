@@ -15,7 +15,7 @@ const colors={red:"#d83f43",blue:"#3b6cba",green:"#38815b",gold:"#d2a332"};
 function save(){localStorage.setItem("kk2-profile",JSON.stringify(profile));updateProfile();}
 function showScreen(id){
   screens.forEach(s=>s.classList.toggle("active",s.id===id));
-  const playing=id==="game-screen";
+  const playing=game.mode==="playing";
   $("left-button").disabled=!playing;$("right-button").disabled=!playing;
 }
 function updateHud(){
@@ -36,7 +36,7 @@ function makeSegment(y,side=rand(),kind="branch"){return {y,side,kind};}
 function resetGame(){
   game.mode="playing";game.score=0;game.time=5+profile.breath*.35;game.side=1;game.anim=0;game.shake=0;game.earned=0;
   game.segments=[];
-  for(let i=0;i<9;i++)game.segments.push(makeSegment(95+i*34,rand(),i<6?"branch":"clear"));
+  for(let i=0;i<9;i++)game.segments.push(makeSegment(0,rand(),i<7?"branch":"clear"));
   updateHud();$("timer-fill").style.transform="scaleX(1)";showScreen("");
   screens.forEach(s=>s.classList.remove("active"));
   game.last=performance.now();
@@ -75,7 +75,7 @@ function pause(){
 }
 function resume(){
   if(game.mode!=="paused")return;
-  game.mode="playing";game.last=performance.now();screens.forEach(s=>s.classList.remove("active"));
+  game.mode="playing";game.last=performance.now();showScreen("");
 }
 function pixelRect(x,y,w,h,c){ctx.fillStyle=c;ctx.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h));}
 function drawBackground(){
@@ -102,10 +102,10 @@ function drawTree(){
   // fresh cut face
   pixelRect(109,38,22,4,"#e7b976");
   game.segments.forEach((s,i)=>{
-    const y=Math.round(s.y);
+    const y=245-i*28;
     if(s.kind!=="branch"||y<-18||y>H+12)return;
     const left=s.side<0;
-    if(left){pixelRect(104,y, -48,9,"#75412d");pixelRect(56,y-7,8,15,"#9a5b38");pixelRect(48,y-9,8,5,"#d58a4c");}
+    if(left){pixelRect(56,y,48,9,"#75412d");pixelRect(56,y-7,8,15,"#9a5b38");pixelRect(48,y-9,8,5,"#d58a4c");}
     else{pixelRect(136,y,48,9,"#75412d");pixelRect(184,y-7,8,15,"#9a5b38");pixelRect(192,y-9,8,5,"#d58a4c");}
     pixelRect(left?58:184,y+8,14,3,"#422832");
   });
@@ -136,8 +136,7 @@ function render(now){
   if(game.mode==="playing"){
     game.time-=dt/1000*(1+game.score/900);
     game.anim=Math.max(0,game.anim-dt/1000);
-    game.segments.forEach(s=>s.y-=dt*.045*(1+game.score/500));
-    if(game.segments[0]&&game.segments[0].y<62){game.segments[0].y=62;}
+  
     $("timer-fill").style.transform="scaleX("+Math.max(0,game.time/(5+profile.breath*.35))+")";
     if(game.time<=0)endGame("time");
   }
