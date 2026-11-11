@@ -137,7 +137,7 @@ function drawPlank(side,y,lamp=false){
   ctx.fillStyle="#d48b4f";ctx.fillRect(51,-2,6,6);
   if(lamp){
     ctx.strokeStyle="#4b3038";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(53,7);ctx.lineTo(53,17);ctx.stroke();
-    ctx.fillStyle="#4a9b68";ctx.beginPath();ctx.roundRect(47,16,13,17,4);ctx.fill();
+    ctx.fillStyle="#4a9b68";ctx.beginPath();ctx.moveTo(49,16);ctx.lineTo(58,16);ctx.lineTo(60,21);ctx.lineTo(59,31);ctx.lineTo(48,31);ctx.lineTo(47,21);ctx.closePath();ctx.fill();
     ctx.fillStyle="#a5e08a";ctx.fillRect(49,19,9,3);ctx.fillStyle="#d3f0a3";ctx.fillRect(50,24,7,5);
     ctx.fillStyle="#345640";ctx.fillRect(49,14,9,3);
   }
