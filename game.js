@@ -132,7 +132,7 @@
       if(state.branchRows[0] && state.branchRows[0].y>560){
         state.branchRows.shift();
         const last=state.branchRows[state.branchRows.length-1];
-        state.branchRows.push({y:last.y-105,side:Math.random()<.5?-1:1,active:Math.random()<.62});
+        state.branchRows.push({y:last.y+105,side:Math.random()<.5?-1:1,active:Math.random()<.62});
       }
     }
     drawBackground();drawTree();drawFighter();drawEffects(dt);
