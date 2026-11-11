@@ -39,7 +39,7 @@ function resetGame(){
   game.mode="playing";game.score=0;game.time=5+profile.breath*.35;game.side=-1;game.anim=0;game.shake=0;
   game.earned=0;game.combo=0;game.multiplier=1;game.particles=[];game.floaters=[];
   game.segments=[];
-  for(let i=0;i<9;i++)game.segments.push(makeSegment(i===0?1:rand(),i<8?"branch":"clear"));
+  for(let i=0;i<9;i++)game.segments.push(makeSegment(i%2===0?1:-1,i<8?"branch":"clear"));
   updateHud();$("timer-fill").style.transform="scaleX(1)";showScreen("");
   screens.forEach(s=>s.classList.remove("active"));
   game.last=performance.now();
@@ -162,9 +162,11 @@ function drawNinja(){
   // shadow and feet
   ctx.fillStyle="#271a2c66";ctx.beginPath();ctx.ellipse(0,43,24,6,0,0,Math.PI*2);ctx.fill();
   ctx.fillStyle="#35232c";ctx.beginPath();ctx.ellipse(-7,39,9,4,-.15,0,Math.PI*2);ctx.ellipse(9,39,9,4,.15,0,Math.PI*2);ctx.fill();
-  // legs
-  ctx.fillStyle="#edbd38";ctx.beginPath();ctx.moveTo(-12,10);ctx.lineTo(12,10);ctx.lineTo(17,36);ctx.lineTo(3,37);ctx.lineTo(-2,23);ctx.lineTo(-7,37);ctx.lineTo(-18,35);ctx.closePath();ctx.fill();
+  // planted leg and kicking leg
+  ctx.fillStyle="#edbd38";ctx.beginPath();ctx.moveTo(-12,10);ctx.lineTo(1,10);ctx.lineTo(-3,36);ctx.lineTo(-17,36);ctx.closePath();ctx.fill();
   ctx.strokeStyle="#a96d2d";ctx.lineWidth=1.5;ctx.stroke();
+  ctx.strokeStyle="#edbd38";ctx.lineWidth=10;ctx.lineCap="round";ctx.beginPath();ctx.moveTo(4,13);ctx.lineTo(dir*(13+22*punch),18-19*punch);ctx.stroke();
+  ctx.fillStyle="#35232c";ctx.beginPath();ctx.ellipse(dir*(16+22*punch),18-19*punch,7,4,0,0,Math.PI*2);ctx.fill();
   // torso gi
   ctx.fillStyle=suit;ctx.beginPath();ctx.moveTo(-13,-22);ctx.lineTo(12,-22);ctx.lineTo(17,12);ctx.lineTo(-17,12);ctx.closePath();ctx.fill();
   ctx.strokeStyle="#8d552c";ctx.lineWidth=1.4;ctx.stroke();
