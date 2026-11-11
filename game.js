@@ -22,6 +22,8 @@ function updateHud(){
   $("score").textContent=game.score;$("best").textContent=profile.best;$("coins").textContent=profile.coins;
   $("dojo-coins").textContent=profile.coins;$("breath-level").textContent="Niv. "+profile.breath;
   $("focus-level").textContent="Niv. "+profile.focus;
+  $("buy-breath").textContent="AMÉLIORER · "+(50+profile.breath*35);
+  $("buy-focus").textContent="AMÉLIORER · "+(75+profile.focus*50);
   $("profile-best").textContent=profile.best;$("profile-xp").textContent=profile.xp+" XP";
   $("rank-name").textContent=profile.xp<100?"Débutant":profile.xp<500?"Disciple":profile.xp<1500?"Combattant":"Maître";
   $("avatar").style.background=colors[profile.skin]||colors.red;
@@ -32,7 +34,7 @@ function toast(message){
   clearTimeout(game.toastTimer);game.toastTimer=setTimeout(()=>el.classList.remove("show"),1500);
 }
 function rand(){return Math.random()<.5?-1:1;}
-function makeSegment(y,side=rand(),kind="branch"){return {y,side,kind};}
+function makeSegment(_y,side=rand(),kind="branch"){return {side,kind};}
 function resetGame(){
   game.mode="playing";game.score=0;game.time=5+profile.breath*.35;game.side=1;game.anim=0;game.shake=0;game.earned=0;
   game.segments=[];
@@ -66,7 +68,7 @@ function chop(side){
   let nextSide=rand();
   // Avoid long, unfair sequences while retaining alternating branch patterns.
   if(last&&last.kind==="branch"&&Math.random()<.25)nextSide=-last.side;
-  game.segments.push(makeSegment((last?.y??H)+34,nextSide,Math.random()<.82?"branch":"clear"));
+  game.segments.push(makeSegment(0,nextSide,Math.random()<.82?"branch":"clear"));
   game.shake=2;updateHud();
 }
 function pause(){
