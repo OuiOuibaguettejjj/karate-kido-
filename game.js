@@ -36,7 +36,7 @@ function toast(message){
 function rand(){return Math.random()<.5?-1:1;}
 function makeSegment(side=rand(),kind="branch"){return {side,kind};}
 function resetGame(){
-  game.mode="playing";game.score=0;game.time=5+profile.breath*.35;game.side=1;game.anim=0;game.shake=0;
+  game.mode="playing";game.score=0;game.time=5+profile.breath*.35;game.side=-1;game.anim=0;game.shake=0;
   game.earned=0;game.combo=0;game.multiplier=1;game.particles=[];game.floaters=[];
   game.segments=[];
   for(let i=0;i<9;i++)game.segments.push(makeSegment(i===0?1:rand(),i<8?"branch":"clear"));
