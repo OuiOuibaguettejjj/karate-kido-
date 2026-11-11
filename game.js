@@ -128,8 +128,8 @@
     const dt=Math.min(40,now-state.lastTime);state.lastTime=now;
     if(state.mode==="playing" && countdownEl.hidden){
       state.swing=Math.max(0,state.swing-dt*.006);
-      state.branchRows.forEach(r=>r.y+=dt*.018*state.speed);
-      if(state.branchRows[0] && state.branchRows[0].y>530){
+      state.branchRows.forEach(r=>r.y+=dt*.045*state.speed);
+      if(state.branchRows[0] && state.branchRows[0].y>560){
         state.branchRows.shift();
         const last=state.branchRows[state.branchRows.length-1];
         state.branchRows.push({y:last.y-105,side:Math.random()<.5?-1:1,active:Math.random()<.62});
