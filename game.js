@@ -1,147 +1,178 @@
 (() => {
-  "use strict";
-  const canvas = document.getElementById("game");
-  const ctx = canvas.getContext("2d");
-  const scoreEl = document.getElementById("score");
-  const bestEl = document.getElementById("best");
-  const overlay = document.getElementById("overlay");
-  const overlayTitle = document.getElementById("overlay-title");
-  const overlayCopy = document.getElementById("overlay-copy");
-  const startButton = document.getElementById("start-button");
-  const countdownEl = document.getElementById("countdown");
-  const W = canvas.width, H = canvas.height;
-  const state = {
-    mode: "menu", score: 0, best: Number(localStorage.getItem("kk2-best") || 0),
-    side: -1, speed: 1, chops: 0, branchRows: [], lastTime: 0, swing: 0,
-    particles: [], shake: 0
-  };
-  bestEl.textContent = state.best;
-
-  function reset() {
-    state.mode = "playing"; state.score = 0; state.side = -1; state.speed = 1;
-    state.chops = 0; state.swing = 0; state.particles = []; state.shake = 0;
-    state.branchRows = [];
-    for (let i = 0; i < 7; i++) state.branchRows.push({y: 105 + i * 105, side: Math.random() < .5 ? -1 : 1, active: i < 4});
-    scoreEl.textContent = "0";
-    overlay.hidden = true;
+"use strict";
+const canvas=document.getElementById("game"),ctx=canvas.getContext("2d");
+const W=240,H=360;
+const $=id=>document.getElementById(id);
+const screens=[...document.querySelectorAll(".screen")];
+const defaults={coins:0,best:0,xp:0,breath:0,focus:0,skin:"red",games:0};
+function load(){
+  try{return {...defaults,...JSON.parse(localStorage.getItem("kk2-profile")||"{}")};}
+  catch{return {...defaults};}
+}
+let profile=load();
+const game={mode:"menu",score:0,time:5,side:1,segments:[],last:0,anim:0,shake:0,earned:0,toastTimer:0};
+const colors={red:"#d83f43",blue:"#3b6cba",green:"#38815b",gold:"#d2a332"};
+function save(){localStorage.setItem("kk2-profile",JSON.stringify(profile));updateProfile();}
+function showScreen(id){
+  screens.forEach(s=>s.classList.toggle("active",s.id===id));
+  const playing=id==="game-screen";
+  $("left-button").disabled=!playing;$("right-button").disabled=!playing;
+}
+function updateHud(){
+  $("score").textContent=game.score;$("best").textContent=profile.best;$("coins").textContent=profile.coins;
+  $("dojo-coins").textContent=profile.coins;$("breath-level").textContent="Niv. "+profile.breath;
+  $("focus-level").textContent="Niv. "+profile.focus;
+  $("profile-best").textContent=profile.best;$("profile-xp").textContent=profile.xp+" XP";
+  $("rank-name").textContent=profile.xp<100?"Débutant":profile.xp<500?"Disciple":profile.xp<1500?"Combattant":"Maître";
+  $("avatar").style.background=colors[profile.skin]||colors.red;
+  document.querySelectorAll(".skin").forEach(b=>b.classList.toggle("selected",b.dataset.skin===profile.skin));
+}
+function toast(message){
+  const el=$("toast");el.textContent=message;el.classList.add("show");
+  clearTimeout(game.toastTimer);game.toastTimer=setTimeout(()=>el.classList.remove("show"),1500);
+}
+function rand(){return Math.random()<.5?-1:1;}
+function makeSegment(y,side=rand(),kind="branch"){return {y,side,kind};}
+function resetGame(){
+  game.mode="playing";game.score=0;game.time=5+profile.breath*.35;game.side=1;game.anim=0;game.shake=0;game.earned=0;
+  game.segments=[];
+  for(let i=0;i<9;i++)game.segments.push(makeSegment(95+i*34,rand(),i<6?"branch":"clear"));
+  updateHud();$("timer-fill").style.transform="scaleX(1)";showScreen("");
+  screens.forEach(s=>s.classList.remove("active"));
+  game.last=performance.now();
+}
+function start(){resetGame();}
+function endGame(reason){
+  if(game.mode!=="playing")return;
+  game.mode="over";
+  const multiplier=1+profile.focus*.12;
+  game.earned=Math.floor(game.score/5*multiplier);
+  profile.coins+=game.earned;profile.xp+=game.score;profile.games++;
+  if(game.score>profile.best)profile.best=game.score;
+  save();
+  $("result-title").textContent=reason==="branch"?"TOUCHÉ !":"TEMPS ÉCOULÉ";
+  $("result-score").textContent=game.score;$("result-copy").textContent=game.score>=profile.best?"Nouveau record personnel !":"Encore quelques frappes pour progresser.";
+  $("earned-coins").textContent=game.earned;showScreen("over-screen");
+}
+function chop(side){
+  if(game.mode!=="playing")return;
+  game.side=side;game.anim=.16;
+  const current=game.segments[0];
+  if(current&&current.kind==="branch"&&current.side===side){game.shake=8;endGame("branch");return;}
+  game.score+=10;
+  game.time=Math.min(7,game.time+.34);
+  game.segments.shift();
+  const last=game.segments[game.segments.length-1];
+  let nextSide=rand();
+  // Avoid long, unfair sequences while retaining alternating branch patterns.
+  if(last&&last.kind==="branch"&&Math.random()<.25)nextSide=-last.side;
+  game.segments.push(makeSegment((last?.y??H)+34,nextSide,Math.random()<.82?"branch":"clear"));
+  game.shake=2;updateHud();
+}
+function pause(){
+  if(game.mode!=="playing")return;
+  game.mode="paused";showScreen("pause-screen");
+}
+function resume(){
+  if(game.mode!=="paused")return;
+  game.mode="playing";game.last=performance.now();screens.forEach(s=>s.classList.remove("active"));
+}
+function pixelRect(x,y,w,h,c){ctx.fillStyle=c;ctx.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h));}
+function drawBackground(){
+  pixelRect(0,0,W,H,"#54263a");
+  pixelRect(0,0,W,58,"#351d35");
+  // Distant dojo roofs and warm lantern-lit sky.
+  pixelRect(0,58,W,108,"#8b3b46");pixelRect(0,166,W,70,"#d17b4d");
+  pixelRect(12,92,48,4,"#f4b45d");pixelRect(18,96,36,22,"#613046");
+  pixelRect(180,80,48,4,"#f4b45d");pixelRect(186,84,36,28,"#613046");
+  pixelRect(0,234,W,126,"#3b2532");
+  for(let x=0;x<W;x+=24){pixelRect(x,230,2,130,"#5b3440");}
+  pixelRect(0,300,W,60,"#2a1b2b");
+  pixelRect(0,296,W,4,"#b76b4a");
+  // Lanterns
+  pixelRect(22,120,7,15,"#f6b34e");pixelRect(21,117,9,3,"#f7d47a");
+  pixelRect(207,112,7,15,"#f6b34e");pixelRect(206,109,9,3,"#f7d47a");
+}
+function drawTree(){
+  // Chunky pixel-art trunk and visible cut marks.
+  pixelRect(104,45,32,315,"#6d3d2c");
+  pixelRect(108,45,8,315,"#9a5a36");pixelRect(124,45,7,315,"#4c2b2b");
+  for(let y=58;y<360;y+=28){pixelRect(111,y,3,10,"#c17b48");pixelRect(126,y+9,3,7,"#35232a");}
+  pixelRect(98,42,44,8,"#bd7945");pixelRect(102,38,36,5,"#e0a05a");
+  // fresh cut face
+  pixelRect(109,38,22,4,"#e7b976");
+  game.segments.forEach((s,i)=>{
+    const y=Math.round(s.y);
+    if(s.kind!=="branch"||y<-18||y>H+12)return;
+    const left=s.side<0;
+    if(left){pixelRect(104,y, -48,9,"#75412d");pixelRect(56,y-7,8,15,"#9a5b38");pixelRect(48,y-9,8,5,"#d58a4c");}
+    else{pixelRect(136,y,48,9,"#75412d");pixelRect(184,y-7,8,15,"#9a5b38");pixelRect(192,y-9,8,5,"#d58a4c");}
+    pixelRect(left?58:184,y+8,14,3,"#422832");
+  });
+}
+function drawNinja(){
+  const x=game.side<0?70:170;
+  const y=268;
+  const suit=colors[profile.skin]||colors.red;
+  const swing=game.anim>0?Math.sin((game.anim/.16)*Math.PI)*9:0;
+  // shadow, legs, gi body, belt, head, hair and headband
+  pixelRect(x-13,y+38,30,5,"#211923");
+  pixelRect(x-8,y+27,7,15,"#29232b");pixelRect(x+5,y+27,7,15,"#29232b");
+  pixelRect(x-12,y+8,27,24,suit);pixelRect(x-15,y+11,8,17,suit);pixelRect(x+11,y+11,8,17,suit);
+  pixelRect(x-13,y+20,28,4,"#f0d9b8");pixelRect(x-1,y+20,4,4,"#2a2027");
+  pixelRect(x-8,y-11,20,20,"#e8b58b");
+  pixelRect(x-9,y-14,22,8,"#28202a");pixelRect(x-8,y-5,20,3,"#e7bd73");
+  pixelRect(x-4,y-2,2,2,"#2b2028");pixelRect(x+5,y-2,2,2,"#2b2028");
+  // arm extended toward trunk on each strike
+  if(game.side<0){pixelRect(x+7,y+12,13+swing,6,suit);pixelRect(x+17+swing,y+11,6,7,"#e8b58b");}
+  else{pixelRect(x-20-swing,y+12,13,6,suit);pixelRect(x-25-swing,y+11,6,7,"#e8b58b");}
+  pixelRect(x-12,y+40,13,4,"#1b1720");pixelRect(x+3,y+40,13,4,"#1b1720");
+}
+function drawEffects(){
+  if(game.shake>0)game.shake=Math.max(0,game.shake-.6);
+}
+function render(now){
+  const dt=Math.min(50,now-game.last||16);game.last=now;
+  if(game.mode==="playing"){
+    game.time-=dt/1000*(1+game.score/900);
+    game.anim=Math.max(0,game.anim-dt/1000);
+    game.segments.forEach(s=>s.y-=dt*.045*(1+game.score/500));
+    if(game.segments[0]&&game.segments[0].y<62){game.segments[0].y=62;}
+    $("timer-fill").style.transform="scaleX("+Math.max(0,game.time/(5+profile.breath*.35))+")";
+    if(game.time<=0)endGame("time");
   }
-  function start() {
-    reset();
-    let n = 3; countdownEl.hidden = false; countdownEl.textContent = n;
-    const tick = () => {
-      n--;
-      if (n > 0) { countdownEl.textContent = n; setTimeout(tick, 550); }
-      else { countdownEl.hidden = true; state.lastTime = performance.now(); }
-    };
-    setTimeout(tick, 550);
-  }
-  function endGame() {
-    if (state.mode !== "playing") return;
-    state.mode = "over";
-    if (state.score > state.best) {
-      state.best = state.score; localStorage.setItem("kk2-best", String(state.best));
-      bestEl.textContent = state.best;
-    }
-    overlayTitle.textContent = "FIN DE PARTIE";
-    overlayCopy.textContent = "Score : " + state.score + " — Record : " + state.best + ". Recommence pour battre ton record.";
-    startButton.textContent = "REJOUER";
-    overlay.hidden = false;
-  }
-  function chop(side) {
-    if (state.mode !== "playing" || !countdownEl.hidden) return;
-    state.side = side; state.swing = 1; state.chops++;
-    const row = state.branchRows[0];
-    if (row && row.active && row.side === side) { endGame(); return; }
-    state.score++;
-    scoreEl.textContent = state.score;
-    state.speed = Math.min(2.7, 1 + state.score * .008);
-    state.particles.push({x: W/2, y: 370, life: 1, side});
-    state.branchRows.forEach(r => r.y += 8 + state.speed * 2);
-    if (state.branchRows[0].y > 480) {
-      state.branchRows.shift();
-      const lastY = state.branchRows[state.branchRows.length - 1].y;
-      const lastSide = state.branchRows[state.branchRows.length - 1].side;
-      const newSide = Math.random() < .5 ? -1 : 1;
-      state.branchRows.push({y: lastY - 105, side: newSide, active: Math.random() < Math.min(.88, .52 + state.score / 300)});
-    }
-  }
-  function roundRect(x,y,w,h,r,fill) {
-    ctx.fillStyle=fill;ctx.beginPath();ctx.roundRect(x,y,w,h,r);ctx.fill();
-  }
-  function drawBackground() {
-    const sky=ctx.createLinearGradient(0,0,0,H);sky.addColorStop(0,"#8fc0d0");sky.addColorStop(.65,"#d4d5b6");sky.addColorStop(1,"#879b72");
-    ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);
-    ctx.fillStyle="#e7d7aa";ctx.globalAlpha=.65;ctx.beginPath();ctx.arc(380,105,48,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;
-    ctx.fillStyle="#6c927b";ctx.beginPath();ctx.moveTo(0,340);ctx.quadraticCurveTo(110,270,220,340);ctx.quadraticCurveTo(360,255,480,340);ctx.lineTo(480,510);ctx.lineTo(0,510);ctx.fill();
-    ctx.fillStyle="#718b62";ctx.fillRect(0,500,W,220);
-    for(let i=0;i<11;i++){const x=(i*57+18)%W;ctx.fillStyle=i%2?"#597954":"#66855c";ctx.beginPath();ctx.arc(x,470+(i%3)*13,35,Math.PI,0);ctx.fill();}
-    ctx.fillStyle="#b4a17d";ctx.fillRect(0,560,W,160);
-  }
-  function drawTree() {
-    // Tronc central et coupe visible
-    const bark=ctx.createLinearGradient(190,0,290,0);bark.addColorStop(0,"#684027");bark.addColorStop(.5,"#a66c3e");bark.addColorStop(1,"#70452b");
-    roundRect(197,30,86,570,13,bark);
-    ctx.strokeStyle="#d19a62";ctx.lineWidth=3;
-    for(let y=65;y<590;y+=54){ctx.beginPath();ctx.moveTo(210,y);ctx.quadraticCurveTo(238,y-12,270,y+3);ctx.stroke();}
-    ctx.fillStyle="#d8a66e";ctx.beginPath();ctx.ellipse(240,30,43,12,0,0,Math.PI*2);ctx.fill();
-    state.branchRows.forEach(r=>{
-      if(!r.active)return;
-      const y=r.y;
-      ctx.save();ctx.translate(240,y);ctx.scale(r.side,1);
-      ctx.fillStyle="#81512f";ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(92,-18);ctx.lineTo(100,-4);ctx.lineTo(0,14);ctx.closePath();ctx.fill();
-      ctx.fillStyle="#a66d42";ctx.beginPath();ctx.moveTo(83,-17);ctx.lineTo(102,-44);ctx.lineTo(112,-39);ctx.lineTo(100,-4);ctx.closePath();ctx.fill();
-      ctx.restore();
-    });
-  }
-  function drawFighter() {
-    const x=state.side<0?135:345, y=450;
-    const lean=state.swing?Math.sin(state.swing*Math.PI)*12:0;
-    ctx.save();ctx.translate(x,y);ctx.rotate(state.side<0?.05:-.05);
-    // Ombre
-    ctx.fillStyle="#263b36aa";ctx.beginPath();ctx.ellipse(0,74,47,11,0,0,Math.PI*2);ctx.fill();
-    // jambes
-    ctx.strokeStyle="#20252a";ctx.lineWidth=17;ctx.lineCap="round";
-    ctx.beginPath();ctx.moveTo(-8,35);ctx.lineTo(-18,70);ctx.moveTo(11,35);ctx.lineTo(25,68);ctx.stroke();
-    // pantalon / kimono
-    ctx.fillStyle="#f1eee2";ctx.beginPath();ctx.moveTo(-24,-7);ctx.lineTo(24,-7);ctx.lineTo(29,42);ctx.lineTo(-28,42);ctx.closePath();ctx.fill();
-    // torse
-    ctx.fillStyle="#f4f0e4";ctx.beginPath();ctx.moveTo(-25,-68);ctx.lineTo(25,-68);ctx.lineTo(30,-5);ctx.lineTo(-30,-5);ctx.closePath();ctx.fill();
-    ctx.strokeStyle="#b7b2a4";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(0,-65);ctx.lineTo(5,-9);ctx.lineTo(23,-58);ctx.stroke();
-    // ceinture
-    ctx.fillStyle="#25282a";ctx.fillRect(-28,-16,56,8);ctx.fillRect(7,-8,7,22);
-    // tête et bandeau
-    ctx.fillStyle="#d99f75";ctx.beginPath();ctx.arc(0,-87,21,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle="#272b30";ctx.beginPath();ctx.arc(0,-95,21,Math.PI,Math.PI*2);ctx.fill();
-    ctx.fillStyle="#bd3f36";ctx.fillRect(-20,-91,40,6);
-    // bras et poings
-    ctx.strokeStyle="#f2eee2";ctx.lineWidth=14;ctx.lineCap="round";
-    ctx.beginPath();ctx.moveTo(-22,-57);ctx.lineTo(state.side<0?-50-lean:-12,-40);ctx.moveTo(22,-57);ctx.lineTo(state.side<0?12:50+lean,-40);ctx.stroke();
-    ctx.fillStyle="#d99f75";ctx.beginPath();ctx.arc(state.side<0?-50-lean:50+lean,-40,9,0,Math.PI*2);ctx.fill();
-    ctx.restore();
-  }
-  function drawEffects(dt) {
-    state.particles=state.particles.filter(p=>p.life>0);
-    state.particles.forEach(p=>{p.life-=dt*.0018;ctx.globalAlpha=Math.max(0,p.life);ctx.fillStyle="#f5d37c";ctx.beginPath();ctx.arc(p.x+(Math.random()-.5)*25,p.y+(Math.random()-.5)*30,3+Math.random()*3,0,Math.PI*2);ctx.fill();});
-    ctx.globalAlpha=1;
-  }
-  function render(now) {
-    const dt=Math.min(40,now-state.lastTime);state.lastTime=now;
-    if(state.mode==="playing" && countdownEl.hidden){
-      state.swing=Math.max(0,state.swing-dt*.006);
-      state.branchRows.forEach(r=>r.y+=dt*.045*state.speed);
-      if(state.branchRows[0] && state.branchRows[0].y>560){
-        state.branchRows.shift();
-        const last=state.branchRows[state.branchRows.length-1];
-        state.branchRows.push({y:last.y+105,side:Math.random()<.5?-1:1,active:Math.random()<.62});
-      }
-    }
-    drawBackground();drawTree();drawFighter();drawEffects(dt);
-    requestAnimationFrame(render);
-  }
-  document.getElementById("left-button").addEventListener("pointerdown",e=>{e.preventDefault();chop(-1);});
-  document.getElementById("right-button").addEventListener("pointerdown",e=>{e.preventDefault();chop(1);});
-  canvas.addEventListener("pointerdown",e=>{const r=canvas.getBoundingClientRect();chop(e.clientX<r.left+r.width/2?-1:1);});
-  window.addEventListener("keydown",e=>{if(e.key==="ArrowLeft"||e.key.toLowerCase()==="a")chop(-1);if(e.key==="ArrowRight"||e.key.toLowerCase()==="d")chop(1);if((e.key===" "||e.key==="Enter")&&state.mode!=="playing")start();});
-  startButton.addEventListener("click",start);
+  ctx.save();
+  if(game.shake>0)ctx.translate((Math.random()-.5)*game.shake,(Math.random()-.5)*game.shake);
+  drawBackground();drawTree();drawNinja();drawEffects();
+  ctx.restore();
   requestAnimationFrame(render);
+}
+function buyUpgrade(key,cost){
+  if(profile.coins<cost){toast("Pas assez de pièces");return;}
+  profile.coins-=cost;profile[key]++;
+  save();toast("Entraînement amélioré !");
+}
+$("play-button").addEventListener("click",start);
+$("retry-button").addEventListener("click",start);
+$("resume-button").addEventListener("click",resume);
+$("quit-button").addEventListener("click",()=>{game.mode="menu";showScreen("home-screen");});
+$("left-button").addEventListener("pointerdown",e=>{e.preventDefault();chop(-1);});
+$("right-button").addEventListener("pointerdown",e=>{e.preventDefault();chop(1);});
+$("buy-breath").addEventListener("click",()=>buyUpgrade("breath",50+profile.breath*35));
+$("buy-focus").addEventListener("click",()=>buyUpgrade("focus",75+profile.focus*50));
+$("home-button").addEventListener("click",()=>{if(game.mode==="playing")pause();else showScreen("home-screen");});
+document.querySelectorAll("[data-screen]").forEach(b=>b.addEventListener("click",()=>{showScreen(b.dataset.screen);updateProfile();}));
+$("skins").addEventListener("click",e=>{
+  const b=e.target.closest("[data-skin]");if(!b)return;
+  if(b.dataset.skin==="gold"){toast("Kimono doré bientôt disponible");return;}
+  profile.skin=b.dataset.skin;save();
+});
+function updateProfile(){updateHud();}
+window.addEventListener("keydown",e=>{
+  if(e.key==="ArrowLeft"||e.key.toLowerCase()==="a"){e.preventDefault();chop(-1);}
+  if(e.key==="ArrowRight"||e.key.toLowerCase()==="d"){e.preventDefault();chop(1);}
+  if(e.key==="Escape"){if(game.mode==="playing")pause();else if(game.mode==="paused")resume();}
+});
+document.addEventListener("visibilitychange",()=>{if(document.hidden&&game.mode==="playing")pause();});
+updateHud();showScreen("home-screen");requestAnimationFrame(render);
 })();
