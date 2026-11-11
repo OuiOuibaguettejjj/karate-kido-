@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#171b20">
+  <title>Karate Kido 2 — Prototype</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="game-shell">
+    <header class="topbar">
+      <div class="brand"><span class="brand-mark">拳</span><span>KARATE KIDO <b>2</b></span></div>
+      <div class="score-panel"><span>SCORE</span><strong id="score">0</strong></div>
+      <div class="best-panel"><span>BEST</span><strong id="best">0</strong></div>
+    </header>
+    <section class="stage-wrap" aria-label="Zone de jeu">
+      <canvas id="game" width="480" height="720" aria-label="Jeu Karate Kido 2"></canvas>
+      <div class="overlay" id="overlay">
+        <div class="overlay-card">
+          <p class="eyebrow">LE DÉFI DU DOJO</p>
+          <h1 id="overlay-title">KARATE KIDO 2</h1>
+          <p id="overlay-copy">Frappe l'arbre. Change de côté pour éviter les branches. Tiens le plus longtemps possible.</p>
+          <button id="start-button" type="button">COMMENCER</button>
+          <small>TOUCHE GAUCHE / DROITE OU CLIQUE SUR UN CÔTÉ</small>
+        </div>
+      </div>
+      <div class="countdown" id="countdown" hidden>3</div>
+    </section>
+    <footer class="controls">
+      <button class="control left" id="left-button" aria-label="Frapper depuis la gauche">◀ <span>GAUCHE</span></button>
+      <button class="control right" id="right-button" aria-label="Frapper depuis la droite"><span>DROITE</span> ▶</button>
+    </footer>
+    <p class="hint">Évite les branches en changeant de côté avant chaque frappe.</p>
+  </main>
+  <script src="game.js"></script>
+</body>
+</html>
