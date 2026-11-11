@@ -38,7 +38,7 @@ La version HTML5 listée par SGameS (https://sgames.org/133294/) fournit une ré
 
 La FAQ GAMEE intitulée « Karate Kido » documente un timer, des points par frappe et plusieurs power-ups. Elle concerne explicitement *Karate Kido* et non *Karate Kido 2* ; ces règles ne sont donc pas considérées comme des faits établis pour cette reproduction.
 
-Les valeurs exactes du multiplicateur et du timer ne sont pas lisibles dans les sources accessibles. Les valeurs du prototype sont donc des paramètres de travail, pas une affirmation de parité parfaite.
+Les valeurs exactes du multiplicateur et du timer ne sont pas lisibles dans les sources accessibles. Les valeurs du prototype sont donc des paramètres de travail, pas une affirmation de parité parfaite. La lanterne visible sur une capture est représentée comme un bonus de +1 seconde dans le prototype ; cet effet précis reste une hypothèse, pas une mécanique vérifiée.
 
 ## Périmètre de cette branche
 
