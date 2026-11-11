@@ -26,13 +26,14 @@ const server = http.createServer((req, res) => {
     await page.addInitScript(() => {
       Math.random = () => 0.9;
       localStorage.setItem("kk2-profile", JSON.stringify({
-        coins: 100, best: 0, xp: 0, breath: 0, focus: 0, skin: "red", games: 0
+        coins: 100, best: 0, xp: 0, breath: 0, focus: 0, skin: "yellow", games: 0
       }));
     });
     await page.goto("http://127.0.0.1:4173", { waitUntil: "load" });
     await page.screenshot({ path: path.join(artifacts, "home.png"), fullPage: true });
     assert.equal(await page.locator("#home-screen").evaluate(el => el.classList.contains("active")), true);
     assert.equal(await page.locator("#game").evaluate(el => el.width === 240 && el.height === 360), true);
+    assert.equal((await page.evaluate(() => JSON.parse(localStorage.getItem("kk2-profile")))).skin, "yellow");
     await page.locator("#play-button").click();
     await page.screenshot({ path: path.join(artifacts, "gameplay.png"), fullPage: true });
     await page.locator("#home-button").click();
