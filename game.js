@@ -3,14 +3,14 @@
 const canvas=document.getElementById("game"),ctx=canvas.getContext("2d");
 const W=240,H=360,$=id=>document.getElementById(id);
 const screens=[...document.querySelectorAll(".screen")];
-const defaults={coins:0,best:0,xp:0,breath:0,focus:0,skin:"red",games:0};
+const defaults={coins:0,best:0,xp:0,breath:0,focus:0,skin:"yellow",games:0};
 function load(){
   try{return {...defaults,...JSON.parse(localStorage.getItem("kk2-profile")||"{}")};}
   catch{return {...defaults};}
 }
 let profile=load();
 const game={mode:"menu",score:0,time:5,side:1,segments:[],last:0,anim:0,shake:0,earned:0,combo:0,multiplier:1,particles:[],floaters:[],toastTimer:0};
-const suits={red:"#d94b40",blue:"#4a78c2",green:"#4b9364",gold:"#d9a62f"};
+const suits={yellow:"#edbd38",red:"#d94b40",blue:"#4a78c2",green:"#4b9364"};
 function save(){localStorage.setItem("kk2-profile",JSON.stringify(profile));updateProfile();}
 function showScreen(id){
   screens.forEach(s=>s.classList.toggle("active",s.id===id));
@@ -237,7 +237,6 @@ $("home-button").addEventListener("click",()=>{if(game.mode==="playing")pause();
 document.querySelectorAll("[data-screen]").forEach(b=>b.addEventListener("click",()=>{showScreen(b.dataset.screen);updateProfile();}));
 $("skins").addEventListener("click",e=>{
   const b=e.target.closest("[data-skin]");if(!b)return;
-  if(b.dataset.skin==="gold"){toast("Kimono doré bientôt disponible");return;}
   profile.skin=b.dataset.skin;save();
 });
 function updateProfile(){updateHud();}
