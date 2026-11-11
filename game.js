@@ -34,12 +34,12 @@ function toast(message){
   clearTimeout(game.toastTimer);game.toastTimer=setTimeout(()=>el.classList.remove("show"),1500);
 }
 function rand(){return Math.random()<.5?-1:1;}
-function makeSegment(side=rand(),kind="branch"){return {side,kind};}
+function makeSegment(side=rand(),kind="branch",lamp=false){return {side,kind,lamp};}
 function resetGame(){
   game.mode="playing";game.score=0;game.time=5+profile.breath*.35;game.side=-1;game.anim=0;game.shake=0;
   game.earned=0;game.combo=0;game.multiplier=1;game.particles=[];game.floaters=[];
   game.segments=[];
-  for(let i=0;i<9;i++)game.segments.push(makeSegment(i%2===0?1:-1,i<8?"branch":"clear"));
+  for(let i=0;i<9;i++)game.segments.push(makeSegment(i%2===0?1:-1,i<8?"branch":"clear",i===4));
   updateHud();$("timer-fill").style.transform="scaleX(1)";showScreen("");
   screens.forEach(s=>s.classList.remove("active"));
   game.last=performance.now();
@@ -74,11 +74,12 @@ function chop(side){
   game.multiplier=Math.min(2.5,1+Math.floor(game.combo/3)*.1);
   const points=Math.round(10*game.multiplier);
   game.score+=points;game.time=Math.min(7,game.time+.32);
+  if(current&&current.lamp){game.time=Math.min(7,game.time+1);toast("Bonus lanterne : +1 seconde");}
   game.segments.shift();
   const last=game.segments[game.segments.length-1];
   let nextSide=rand();
   if(last&&last.kind==="branch"&&Math.random()<.25)nextSide=-last.side;
-  game.segments.push(makeSegment(nextSide,Math.random()<.88?"branch":"clear"));
+  game.segments.push(makeSegment(nextSide,Math.random()<.88?"branch":"clear",Math.random()<.12));
   game.floaters.push({text:"+"+points,x:120,y:210,life:.85});
   addSplinters();game.shake=2;updateHud();
 }
@@ -123,7 +124,7 @@ function drawBackground(){
   // distant roof lines
   rect(0,222,W,3,"#593248");rect(0,231,W,2,"#8a4b53");
 }
-function drawPlank(side,y){
+function drawPlank(side,y,lamp=false){
   const left=side<0;
   ctx.save();
   ctx.translate(120,y);
@@ -134,6 +135,12 @@ function drawPlank(side,y){
   ctx.fillStyle="#f0bd78";ctx.fillRect(8,-4,39,2);
   ctx.fillStyle="#60372f";ctx.fillRect(17,2,18,2);
   ctx.fillStyle="#d48b4f";ctx.fillRect(51,-2,6,6);
+  if(lamp){
+    ctx.strokeStyle="#4b3038";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(53,7);ctx.lineTo(53,17);ctx.stroke();
+    ctx.fillStyle="#4a9b68";ctx.beginPath();ctx.roundRect(47,16,13,17,4);ctx.fill();
+    ctx.fillStyle="#a5e08a";ctx.fillRect(49,19,9,3);ctx.fillStyle="#d3f0a3";ctx.fillRect(50,24,7,5);
+    ctx.fillStyle="#345640";ctx.fillRect(49,14,9,3);
+  }
   ctx.restore();
 }
 function drawTree(){
@@ -151,7 +158,7 @@ function drawTree(){
   game.segments.forEach((s,i)=>{
     const y=245-i*28;
     if(s.kind!=="branch"||y<-18||y>H+10)return;
-    drawPlank(s.side,y);
+    drawPlank(s.side,y,s.lamp);
   });
 }
 function drawNinja(){
