@@ -22,6 +22,12 @@ jobs:
         run: node tests/smoke.cjs
       - name: Run browser smoke test
         run: node tests/browser-smoke.cjs
+      - name: Upload browser screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: karate-kido-browser-shots
+          path: artifacts/
       - name: Check required interface hooks
         run: |
-          node -e "const fs=require('fs'); const h=fs.readFileSync('index.html','utf8'); const j=fs.readFileSync('game.js','utf8'); for (const id of ['game','home-screen','dojo-screen','profile-screen','pause-screen','over-screen','left-button','right-button','timer-fill']) if (!h.includes('id=\"'+id+'\"')) throw new Error('Missing HTML id: '+id); for (const id of ['play-button','retry-button','resume-button','quit-button','buy-breath','buy-focus']) if (!j.includes(id)) throw new Error('Missing game handler: '+id);"
+          node -e "const fs=require('fs'); const h=fs.readFileSync('index.html','utf8'); const j=fs.readFileSync('game.js','utf8'); for (const id of ['game','home-screen','dojo-screen','profile-screen','pause-screen','over-screen','left-button','right-button','timer-fill','multiplier']) if (!h.includes('id=\"'+id+'\"')) throw new Error('Missing HTML id: '+id); for (const id of ['play-button','retry-button','resume-button','quit-button','buy-breath','buy-focus']) if (!j.includes(id)) throw new Error('Missing game handler: '+id);"
