@@ -35,6 +35,9 @@ const server = http.createServer((req, res) => {
     assert.equal(await page.locator("#game").evaluate(el => el.width === 240 && el.height === 360), true);
     await page.locator("#play-button").click();
     await page.screenshot({ path: path.join(artifacts, "gameplay.png"), fullPage: true });
+    await page.locator("#home-button").click();
+    assert.equal(await page.locator("#pause-screen").evaluate(el => el.classList.contains("active")), true);
+    await page.locator("#resume-button").click();
     await page.locator("#left-button").click();
     assert.equal(await page.locator("#score").textContent(), "10");
     await page.locator("#right-button").click();
