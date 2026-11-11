@@ -38,12 +38,14 @@ const server = http.createServer((req, res) => {
     let profile = await page.evaluate(() => JSON.parse(localStorage.getItem("kk2-profile")));
     assert.equal(profile.best, 10);
     assert.equal(profile.coins, 102);
-    await page.locator('[data-screen="dojo-screen"]').click();
+    await page.locator('#over-screen [data-screen="home-screen"]').click();
+    await page.locator('#home-screen [data-screen="dojo-screen"]').click();
     await page.locator("#buy-breath").click();
     profile = await page.evaluate(() => JSON.parse(localStorage.getItem("kk2-profile")));
     assert.equal(profile.breath, 1);
     assert.equal(profile.coins, 52);
-    await page.locator('[data-screen="profile-screen"]').click();
+    await page.locator('#dojo-screen [data-screen="home-screen"]').click();
+    await page.locator('#home-screen [data-screen="profile-screen"]').click();
     await page.locator('.skin[data-skin="blue"]').click();
     profile = await page.evaluate(() => JSON.parse(localStorage.getItem("kk2-profile")));
     assert.equal(profile.skin, "blue");
